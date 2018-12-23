@@ -2,11 +2,6 @@ import kotlinx.coroutines.GlobalScope
 import kotlinx.coroutines.launch
 import java.io.File
 import java.util.regex.Pattern
-import java.nio.file.Files.isRegularFile
-import java.nio.file.Paths
-import java.nio.file.Files
-import java.nio.file.Path
-import java.util.function.Consumer
 
 
 /**
@@ -85,7 +80,7 @@ fun mkdirUntilEmpty(file: File): File
         // Empty Directory
         if (file.listFiles().isEmpty())
         {
-            return file;
+            return file
         }
         else
         {

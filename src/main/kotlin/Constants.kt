@@ -6,7 +6,6 @@ import com.fasterxml.jackson.module.kotlin.KotlinModule
 import org.kohsuke.github.GHRelease
 import java.io.File
 import java.util.concurrent.CopyOnWriteArrayList
-import java.util.concurrent.atomic.AtomicReferenceArray
 
 /**
  *
@@ -112,9 +111,18 @@ class Constants
         {
             println("Parsing Core Settings")
             val file = File("${Constants.BASE_DIR}${File.separator}core_settings.pal")
-            var ps = objectMapper.readValue(file, PALSettings::class.java)
-            PAL_SETTINGS = ps
-            palSettingsExists = true
+
+            if (file.exists())
+            {
+                var ps = objectMapper.readValue(file, PALSettings::class.java)
+                PAL_SETTINGS = ps
+                palSettingsExists = true
+            }
+            else
+            {
+                palSettingsExists = false
+            }
+
         }
 
         fun saveCoreSettings()
@@ -159,6 +167,10 @@ class Constants
 
         fun createBaseFolders()
         {
+            val pal = File(BASE_DIR)
+            if (!pal.exists())
+                pal.mkdir()
+
             val addons = File("${INSTALL_DIR}${File.separator}Addons")
 
             if (!addons.exists())

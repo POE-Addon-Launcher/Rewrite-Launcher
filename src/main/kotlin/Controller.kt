@@ -85,11 +85,7 @@ class LaunchController: Initializable
 
         if (Constants.FRESH_INSTALL)
         {
-            txtDump.isVisible = false
-            settingsTabPane.isVisible = true
-            launchPALimageview.opacity = 0.15
-            manualUpdateImageView.opacity = 0.15
-            checkForUpdatesImageView.opacity = 0.15
+            firstRunSetup(true, 0.15)
         }
         else
         {
@@ -99,6 +95,17 @@ class LaunchController: Initializable
         Platform.runLater {
             lpStatus.text = "Welcome Back to PAL!"
             lpStatus.isVisible = true
+        }
+    }
+
+    fun firstRunSetup(b: Boolean, opacity: Double)
+    {
+        Platform.runLater {
+            mainButtonsScreen.isVisible = !b
+            settingsTabPane.isVisible = b
+            launchPALimageview.opacity = opacity
+            manualUpdateImageView.opacity = opacity
+            checkForUpdatesImageView.opacity = opacity
         }
     }
 
@@ -178,65 +185,70 @@ class LaunchController: Initializable
 
     private fun manualUpdate(b: Boolean)
     {
-        Platform.runLater {
-            settingsTabPane.isVisible = false
-            mainButtonsScreen.isVisible = true
-            lpStatus.text = "Manual Update\nPlease, enter the download URL of\nthe jar you wish to manually update to.\n\n\nor type dbg to open the info window"
-            bManUpdateField.isVisible = b
-            bManUse.isVisible = b
-            txtDump.isVisible = !b
-            lpStatus.isVisible = b
+        if (!Constants.FRESH_INSTALL)
+        {
+            Platform.runLater {
+                settingsTabPane.isVisible = false
+                mainButtonsScreen.isVisible = true
+                lpStatus.text = "Manual Update\nPlease, enter the download URL of\nthe jar you wish to manually update to.\n\n\nor type dbg to open the info window"
+                bManUpdateField.isVisible = b
+                bManUse.isVisible = b
+                txtDump.isVisible = !b
+                lpStatus.isVisible = b
+            }
         }
-
     }
 
     private fun checkForUpdates()
     {
-        Platform.runLater {
-            settingsTabPane.isVisible = false
-            mainButtonsScreen.isVisible = true
-            lpStatus.text = "Checking for updates...\nPAL will launch when we're done checking/updating!"
-            bManUpdateField.isVisible = false
-            bManUse.isVisible = false
-            txtDump.isVisible = false
-            lpStatus.isVisible = true
-        }
-
-        GlobalScope.launch {
-            val gh = connect()
-            if (canQuerry(gh))
-            {
-                lpStatusAdd("\n\nConnect Succesful\nYou have ${gh.rateLimit.remaining} requests left which reset at:\n${gh.rateLimit.resetDate}")
-                val repo = gh.getRepository(Constants.REPOSITORY)
-                val mr = repo.latestRelease
-                val asset = find_jarAsset(mr.assets)
-                if (asset != null)
-                {
-                    val file = File("${Constants.INSTALL_DIR}${File.separator}Core${File.separator}${asset.name}")
-                    if (file.exists())
-                    {
-                        lpStatusAdd("\nYou're up to date!")
-                        Constants.JAR_TO_RUN = file
-                    }
-                    else
-                    {
-                        lpStatusAdd("\nDownload in progress!")
-                        ghDownloadbyURL(asset.browserDownloadUrl, asset.name)
-                        lpStatusAdd("\nDownload done!")
-                    }
-
-
-
-                    lpStatusAdd("\n" +
-                            "Launching PAL hf mapping!")
-                    launch_jar()
-                }
+        if (!Constants.FRESH_INSTALL)
+        {
+            Platform.runLater {
+                settingsTabPane.isVisible = false
+                mainButtonsScreen.isVisible = true
+                lpStatus.text = "Checking for updates...\nPAL will launch when we're done checking/updating!"
+                bManUpdateField.isVisible = false
+                bManUse.isVisible = false
+                txtDump.isVisible = false
+                lpStatus.isVisible = true
             }
-            else
-            {
-                lpStatusAdd("\n" +
-                        "You're out of Github requests get an API token or wait until\n" +
-                        "${gh.rateLimit.resetDate}")
+
+            GlobalScope.launch {
+                val gh = connect()
+                if (canQuerry(gh))
+                {
+                    lpStatusAdd("\n\nConnect Succesful\nYou have ${gh.rateLimit.remaining} requests left which reset at:\n${gh.rateLimit.resetDate}")
+                    val repo = gh.getRepository(Constants.REPOSITORY)
+                    val mr = repo.latestRelease
+                    val asset = find_jarAsset(mr.assets)
+                    if (asset != null)
+                    {
+                        val file = File("${Constants.INSTALL_DIR}${File.separator}Core${File.separator}${asset.name}")
+                        if (file.exists())
+                        {
+                            lpStatusAdd("\nYou're up to date!")
+                            Constants.JAR_TO_RUN = file
+                        }
+                        else
+                        {
+                            lpStatusAdd("\nDownload in progress!")
+                            ghDownloadbyURL(asset.browserDownloadUrl, asset.name)
+                            lpStatusAdd("\nDownload done!")
+                        }
+
+
+
+                        lpStatusAdd("\n" +
+                                "Launching PAL hf mapping!")
+                        launch_jar()
+                    }
+                }
+                else
+                {
+                    lpStatusAdd("\n" +
+                            "You're out of Github requests get an API token or wait until\n" +
+                            "${gh.rateLimit.resetDate}")
+                }
             }
         }
     }
@@ -250,17 +262,20 @@ class LaunchController: Initializable
 
     private fun launch_jar()
     {
-        val jar_to_run = Constants.JAR_TO_RUN
+        if (!Constants.FRESH_INSTALL)
+        {
+            val jar_to_run = Constants.JAR_TO_RUN
 
-        if (jar_to_run == null)
-        {
-            // Check for updates
-            checkForUpdates()
-        }
-        else
-        {
-            Runtime.getRuntime().exec("java -jar \"${jar_to_run.path}\"")
-            System.exit(1)
+            if (jar_to_run == null)
+            {
+                // Check for updates
+                checkForUpdates()
+            }
+            else
+            {
+                Runtime.getRuntime().exec("java -jar \"${jar_to_run.path}\"")
+                System.exit(1)
+            }
         }
     }
 
@@ -476,10 +491,23 @@ class LaunchController: Initializable
 
     fun saveMainSettings(actionEvent: ActionEvent)
     {
+        if (Constants.FRESH_INSTALL)
+        {
+            if (Constants.POE_PATHS_FOUND.size == 0)
+            {
+                return
+            }
+            else
+            {
+                firstRunSetup(false, 1.0)
+                Constants.FRESH_INSTALL = false
+            }
+        }
+        Constants.createBaseFolders()
         Constants.INSTALL_DIR = sInstallField.text
         LauncherDataPAL.save(LauncherDataPAL(Constants.INSTALL_DIR, Constants.LAUNCHER_LOCATION, Constants.LAUNCHER_VERSION))
         Constants.savePoePaths()
-        Constants.createBaseFolders()
+
     }
 
     fun savePALsettings(actionEvent: ActionEvent)

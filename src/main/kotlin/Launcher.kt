@@ -1,7 +1,6 @@
 import javafx.application.Application
 import kotlinx.coroutines.GlobalScope
 import kotlinx.coroutines.launch
-import java.io.File
 
 /**
  *

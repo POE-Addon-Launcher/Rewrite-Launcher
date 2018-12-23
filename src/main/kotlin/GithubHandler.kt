@@ -2,7 +2,6 @@ import org.kohsuke.github.GHRelease
 import org.kohsuke.github.GitHub
 import java.io.File
 import java.net.URI
-import java.net.URL
 import java.nio.file.Files
 import java.nio.file.Paths
 
@@ -17,11 +16,14 @@ fun canQuerry(gitHub: GitHub): Boolean
 
 fun connect(): GitHub
 {
-    if (Constants.PAL_SETTINGS.github_api_token_enabled)
+    if (Constants.palSettingsExists)
     {
-        if (Constants.PAL_SETTINGS.github_token != "")
+        if (Constants.PAL_SETTINGS.github_api_token_enabled)
         {
-            return GitHub.connectUsingOAuth(Constants.PAL_SETTINGS.github_token)
+            if (Constants.PAL_SETTINGS.github_token != "")
+            {
+                return GitHub.connectUsingOAuth(Constants.PAL_SETTINGS.github_token)
+            }
         }
     }
     return GitHub.connectAnonymously()
